@@ -2223,14 +2223,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     " bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or"
                     " pip install bitsandbytes` "
                 )
-            if torch_dtype != torch.float16:
+            if torch_dtype is None:
                 # We force the `dtype` to be float16, this is a requirement from `bitsandbytes`
-                logger.warning(
-                    f"Overriding torch_dtype={torch_dtype} with `torch_dtype=torch.float16` due to "
-                    "requirements of `bitsandbytes` to enable model loading in mixed int8. "
-                    "Either pass torch_dtype=torch.float16 or don't pass this argument at all to remove this warning."
-                )
-                torch_dtype = torch.float16
+                torch_dtype = 'auto'
 
             if device_map is None:
                 raise ValueError(
@@ -2297,7 +2292,8 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             load_in_8bit = quantization_config.load_in_8bit
 
             if load_in_8bit:
-                torch_dtype = torch.float16
+                if torch_dtype is None:
+                    torch_dtype = 'auto'
 
                 if device_map is None:
                     device_map = "auto"
@@ -2628,7 +2624,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if load_in_8bit:
             from .utils.bitsandbytes import get_keys_to_not_convert, replace_8bit_linear
 
-            load_in_8bit_skip_modules = quantization_config.llm_int8_skip_modules
+            load_in_8bit_skip_modules = quantization_config.bnb_kbit_skip_modules
             load_in_8bit_threshold = quantization_config.llm_int8_threshold
             load_in_8bit_fp32_cpu_offload = quantization_config.llm_int8_enable_fp32_cpu_offload
 
